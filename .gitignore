@@ -1,0 +1,12 @@
+*.[Oo]bj
+*.o
+*.ioc
+obj/
+[Dd]ebug*/
+.cproject
+.mxproject
+.project
+.settings/
+32F429IDISCOVERY.xml
+chid Debug.cfg
+mx.scratch
