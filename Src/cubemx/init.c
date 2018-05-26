@@ -61,7 +61,6 @@ void init()
 	HAL_Init();
 	SystemClock_Config();
 	MX_GPIO_Init();
-	MX_USB_DEVICE_Init();
 }
 
 

@@ -49,6 +49,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "usbd_custom_hid_if.h"
+#include "usbcomm.h"
 
 /* USER CODE BEGIN INCLUDE */
 
@@ -131,7 +132,7 @@ __ALIGN_BEGIN static uint8_t CUSTOM_HID_ReportDesc_HS[USBD_CUSTOM_HID_REPORT_DES
 
 		0x85, 0x01,                    //   REPORT_ID (1)
 		0x75, 0x08,                    //   REPORT_SIZE (8)
-		0x95, 0x01,        //   REPORT_COUNT (this is the byte length)
+		0x95, 0x01,                    //   REPORT_COUNT (this is the byte length)
 		0x09, 0x00,                    //   USAGE (Undefined)
 		0x81, 0x82,                    //   INPUT (Data,Var,Abs,Vol)
 
@@ -139,7 +140,7 @@ __ALIGN_BEGIN static uint8_t CUSTOM_HID_ReportDesc_HS[USBD_CUSTOM_HID_REPORT_DES
 
 		0x85, 0x02,                    //   REPORT_ID (2)
 		0x75, 0x08,                    //   REPORT_SIZE (8)
-		0x95, 0x40,       //   REPORT_COUNT (this is the byte length)
+		0x95, 0x40,                    //   REPORT_COUNT (this is the byte length)
 		0x09, 0x00,                    //   USAGE (Undefined)
 		0x91, 0x82,                    //   OUTPUT (Data,Var,Abs,Vol)
   /* USER CODE END 1 */
@@ -202,16 +203,6 @@ USBD_CUSTOM_HID_ItfTypeDef USBD_CustomHID_fops_HS =
 static int8_t CUSTOM_HID_Init_HS(void)
 {
   /* USER CODE BEGIN 8 */
-	USBD_CUSTOM_HID_HandleTypeDef     *hhid = (USBD_CUSTOM_HID_HandleTypeDef*)hUsbDeviceHS.pClassData;
-	uint8_t buff[64];
-	int i;
-
-	for (i=0; i<64; i++) {
-		buff[i]=hhid->Report_buf[i];
-	}
-
-	i++;
-
 	return (USBD_OK);
   /* USER CODE END 8 */
 }
@@ -236,15 +227,18 @@ static int8_t CUSTOM_HID_DeInit_HS(void)
 static int8_t CUSTOM_HID_OutEvent_HS(uint8_t event_idx, uint8_t state)
 {
   /* USER CODE BEGIN 10 */
-	USBD_CUSTOM_HID_HandleTypeDef     *hhid = (USBD_CUSTOM_HID_HandleTypeDef*)hUsbDeviceHS.pClassData;
-	uint8_t buff[64];
-	int i;
+  if (usbCommHandle.state == USB_STATE_READY
+      && !usbCommHandle.data_out_pending) {
 
-	for (i=0; i<64; i++) {
-		buff[i]=hhid->Report_buf[i];
-	}
+    usbCommHandle.data_out_pending = true;
+    USBD_CUSTOM_HID_HandleTypeDef *hhid = (USBD_CUSTOM_HID_HandleTypeDef*)hUsbDeviceHS.pClassData;
 
-	i++;
+    for (int i=0; i<CUSTOM_HID_EPOUT_SIZE; i++) {
+      usbCommHandle.buffer[i] = hhid->Report_buf[i];
+    }
+  }
+
+  data_received();
 
 	return (USBD_OK);
   /* USER CODE END 10 */

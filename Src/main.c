@@ -1,17 +1,21 @@
 
 #include "init.h"
-#include "usb_device.h"
-#include "usbd_customhid.h"
+#include "led.h"
+#include "usbcomm.h"
+
 
 int main(void)
 {
-	init();
+  init();
+  led_init();
+  initialize_usbcomm();
+  usbCommHandle.state == USB_STATE_READY ? led_green_on() : led_red_on();
 
-	while (1)
-	{
-		uint8_t data[2] = {0x01, 0xDE};
-		HAL_Delay(100);
-		USBD_CUSTOM_HID_SendReport(&hUsbDeviceHS, (uint8_t*)&data, 2);
-	}
+  while (1)
+  {
+    if (usbCommHandle.data_in_pending) {
+      send_data();
+    }
+  }
 
 }
