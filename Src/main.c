@@ -1,21 +1,21 @@
 
 #include "init.h"
-#include "led.h"
-#include "usbcomm.h"
+#include "bootloader.h"
 
 
 int main(void)
 {
   init();
-  led_init();
-  initialize_usbcomm();
-  usbCommHandle.state == USB_STATE_READY ? led_green_on() : led_red_on();
+
+  Bootloader_t bootloader;
+  initialize(&bootloader);
 
   while (1)
   {
-    if (usbCommHandle.data_in_pending) {
-      send_data();
+    if (bootloader.usb->data_in_pending) {
+      send_data(bootloader.usb);
     }
   }
 
 }
+

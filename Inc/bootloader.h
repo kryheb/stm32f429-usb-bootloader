@@ -38,4 +38,6 @@ typedef struct {
   // ihex parser
 } Bootloader_t;
 
+void initialize(Bootloader_t* _bootloader);
+
 #endif /* BOOTLOADER_H_ */

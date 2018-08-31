@@ -9,12 +9,15 @@
 
 #include "usbcomm.h"
 #include "usbd_customhid.h"
+#include "bootloader.h"
 
 USBCommHandle_t usbCommHandle;
 
 
-void initialize_usbcomm()
+void initialize_usbcomm(Bootloader_t* _bootloader)
 {
+  _bootloader->usb = &usbCommHandle;
+
   usbCommHandle = (USBCommHandle_t){
       .usb_device_handle = &hUsbDeviceHS,
       .state = USB_STATE_INITIALIZATION,
@@ -35,19 +38,16 @@ void initialize_usbcomm()
 
   while(usbCommHandle.usb_device_handle->dev_state != USBD_BUSY);
 
-  USBState_t state = USB_STATE_INITIALIZATION_FAILED;
-
-  if (usbCommHandle.usb_device_handle->dev_state != USBD_FAIL) {
-    state = USB_STATE_READY;
-  }
-
-  usbCommHandle.state = state;
+  usbCommHandle.state =
+      (usbCommHandle.usb_device_handle->dev_state == USBD_FAIL) ?
+          USB_STATE_INITIALIZATION_FAILED : USB_STATE_READY;
 }
 
-void send_data()
+void send_data(USBCommHandle_t* _usbCommHandle)
 {
-  USBD_CUSTOM_HID_SendReport(&hUsbDeviceHS, usbCommHandle.buffer, usbCommHandle.buffer_len);
-  usbCommHandle.state = USB_STATE_READY;
+  USBD_CUSTOM_HID_SendReport(&hUsbDeviceHS, _usbCommHandle->buffer, _usbCommHandle->buffer_len);
+  _usbCommHandle->state = USB_STATE_READY;
+  _usbCommHandle->data_in_pending = false;
 
 }
 
@@ -57,7 +57,8 @@ void data_received()
   USBOutputCommand_t command = usbCommHandle.buffer[1];
   if (command == OUTPUT_COMMAND_INIT) {
     usbCommHandle.buffer[0] = 0x01;
-    usbCommHandle.buffer[1] = (usbCommHandle.state == USB_STATE_READY) ? INPUT_COMMAND_INIT_OK : INPUT_COMMAND_INIT_NOK;
+    usbCommHandle.buffer[1] = (usbCommHandle.state == USB_STATE_READY) ?
+                                  INPUT_COMMAND_INIT_OK : INPUT_COMMAND_INIT_NOK;
     usbCommHandle.buffer_len = 2;
     usbCommHandle.data_in_pending = true;
   }

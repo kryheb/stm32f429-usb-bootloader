@@ -29,7 +29,8 @@ typedef enum {
 typedef enum {
   USB_STATE_INITIALIZATION,
   USB_STATE_INITIALIZATION_FAILED,
-  USB_STATE_READY
+  USB_STATE_READY,
+  USB_STATE_BUSY
 } USBState_t;
 
 typedef struct {
@@ -45,6 +46,6 @@ extern USBCommHandle_t usbCommHandle;
 
 void initialize_usbcomm();
 void data_received();
-void send_data();
+void send_data(USBCommHandle_t* _usbCommHandle);
 
 #endif /* USBCOMM_H_ */
