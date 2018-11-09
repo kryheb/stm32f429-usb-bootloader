@@ -55,12 +55,27 @@ void send_data(USBCommHandle_t* _usbCommHandle)
 void data_received()
 {
   USBOutputCommand_t command = usbCommHandle.buffer[1];
-  if (command == OUTPUT_COMMAND_INIT) {
-    usbCommHandle.buffer[0] = 0x01;
-    usbCommHandle.buffer[1] = (usbCommHandle.state == USB_STATE_READY) ?
-                                  INPUT_COMMAND_INIT_OK : INPUT_COMMAND_INIT_NOK;
-    usbCommHandle.buffer_len = 2;
-    usbCommHandle.data_in_pending = true;
+  switch (command) {
+	  case OUTPUT_COMMAND_INIT: {
+		  // TODO: create command wrapper for usbCommHandle
+		  usbCommHandle.buffer[0] = 0x01;
+		  usbCommHandle.buffer[1] = (usbCommHandle.state == USB_STATE_READY) ?
+				  INPUT_COMMAND_INIT_OK : INPUT_COMMAND_INIT_NOK;
+		  usbCommHandle.buffer_len = 2;
+		  usbCommHandle.data_in_pending = true;
+		  break;
+	  }
+	  case OUTPUT_COMMAND_PREPARE_FOR_CONFIG: {
+		  usbCommHandle.buffer[0] = 0x01;
+		  usbCommHandle.buffer[1] = INPUT_COMMAND_PREPARED_FOR_CONFIG;
+		  usbCommHandle.buffer_len = 2;
+		  usbCommHandle.data_in_pending = true;
+		  break;
+	  }
+
+	  default:
+		  break;
+		  // TODO
   }
 
   usbCommHandle.data_out_pending = false;
