@@ -12,6 +12,7 @@
 #include "bootloader.h"
 
 USBCommHandle_t usbCommHandle;
+Bootloader_t* bootloaderHandle;
 
 
 void initialize_usbcomm(Bootloader_t* _bootloader)
@@ -41,6 +42,10 @@ void initialize_usbcomm(Bootloader_t* _bootloader)
   usbCommHandle.state =
       (usbCommHandle.usb_device_handle->dev_state == USBD_FAIL) ?
           USB_STATE_INITIALIZATION_FAILED : USB_STATE_READY;
+
+  if (usbCommHandle.state == USB_STATE_READY) {
+	  bootloaderHandle = _bootloader;
+  }
 }
 
 void send_data(USBCommHandle_t* _usbCommHandle)
@@ -56,26 +61,32 @@ void data_received()
 {
   USBOutputCommand_t command = usbCommHandle.buffer[1];
   switch (command) {
-	  case OUTPUT_COMMAND_INIT: {
-		  // TODO: create command wrapper for usbCommHandle
-		  usbCommHandle.buffer[0] = 0x01;
-		  usbCommHandle.buffer[1] = (usbCommHandle.state == USB_STATE_READY) ?
-				  INPUT_COMMAND_INIT_OK : INPUT_COMMAND_INIT_NOK;
-		  usbCommHandle.buffer_len = 2;
-		  usbCommHandle.data_in_pending = true;
-		  break;
-	  }
-	  case OUTPUT_COMMAND_PREPARE_FOR_CONFIG: {
-		  usbCommHandle.buffer[0] = 0x01;
-		  usbCommHandle.buffer[1] = INPUT_COMMAND_PREPARED_FOR_CONFIG;
-		  usbCommHandle.buffer_len = 2;
-		  usbCommHandle.data_in_pending = true;
-		  break;
-	  }
+    case OUTPUT_COMMAND_INIT: {
+      // TODO: create command wrapper for usbCommHandle
+      usbCommHandle.buffer[0] = 0x01;
+      usbCommHandle.buffer[1] = (usbCommHandle.state == USB_STATE_READY) ?
+          INPUT_COMMAND_INIT_OK : INPUT_COMMAND_INIT_NOK;
+      usbCommHandle.buffer_len = 2;
+      usbCommHandle.data_in_pending = true;
+      break;
+    }
+    case OUTPUT_COMMAND_SET_ADDRESS_BASE: {
+      uint32_t addr = (usbCommHandle.buffer[2] << 24) |
+          (usbCommHandle.buffer[3] << 16);
+      set_base_address(bootloaderHandle, addr);
 
-	  default:
-		  break;
-		  // TODO
+      usbCommHandle.buffer[0] = 0x01;
+      usbCommHandle.buffer[1] =
+          (bootloaderHandle->state == BOOTLOADER_STATE_SET_ADDRESS_BASE_FAILED) ?
+              INPUT_COMMAND_INVALID_ADDRESS_BASE : INPUT_COMMAND_ADDRESS_BASE_SET;
+      usbCommHandle.buffer_len = 2;
+      usbCommHandle.data_in_pending = true;
+      break;
+    }
+
+    default:
+      break;
+      // TODO
   }
 
   usbCommHandle.data_out_pending = false;
