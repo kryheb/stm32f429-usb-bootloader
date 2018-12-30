@@ -22,13 +22,13 @@ void unlock_flash()
 }
 
 
-static BootloaderStatus_t busy_check()
+static FlashControllerStatus_t busy_check()
 {
   set_timeout(10);
   while(1)
   {
     if (!(FLASH->SR & FLASH_SR_BSY_Msk)) {
-      return OK;
+      return FLASH_CONTROLLER_OK;
     } else if (has_timed_out()) {
       return BUSY_CHECK_TIMEOUT;
     }
@@ -36,7 +36,7 @@ static BootloaderStatus_t busy_check()
 }
 
 
-static void clear_prog_errs()
+void clear_prog_errs()
 {
   FLASH->SR |=
       FLASH_SR_PGSERR  |
@@ -95,7 +95,7 @@ static void clear_prog_errs()
 
 
 
-static BootloaderStatus_t get_flash_error()
+static FlashControllerStatus_t get_flash_error()
 {
   if (FLASH->SR & FLASH_SR_PGSERR_Msk) {
     return FLASH_PROG_SEQ_ERROR;
@@ -106,7 +106,7 @@ static BootloaderStatus_t get_flash_error()
   } else if (FLASH->SR & FLASH_SR_PGPERR_Msk) {
     return FLASH_PROG_PARALLELISM_ERROR;
   } else {
-    return OK;
+    return FLASH_CONTROLLER_OK;
   }
 }
 
@@ -124,20 +124,43 @@ static BootloaderStatus_t get_flash_error()
 	 Sector 11 | 0x080E 0000 - 0x080F FFFF | 128 Kbytes
  */
 
-uint32_t get_sector_addr(uint8_t _sector)
+uint8_t get_sector_from_addr(uint32_t _addr)
 {
-  if (_sector==0) {
-    return FLASH_BEGIN;
-  } else if (_sector>5) {
-    return 0x20000 + get_sector_addr(--_sector);
-  } else if (_sector==5) {
-    return 0x10000 + get_sector_addr(--_sector);
-  } else if (_sector<4) {
-    return 0x4000 + get_sector_addr(--_sector);
+  if ((_addr < BL_FLASH_BEGIN) || (_addr > BL_FLASH_END)){
+    return 0xFF;
   }
 
-  // sector out of range
-  return 0;
+  uint8_t sector = 0;
+  uint32_t addr_offset = SECTOR_SIZE_16KB;
+
+  while((BL_FLASH_BEGIN + addr_offset) <= _addr)
+  {
+    sector++;
+    addr_offset += (sector < 4) ? SECTOR_SIZE_16KB :
+                     (sector == 4) ? SECTOR_SIZE_64KB :
+                                       SECTOR_SIZE_128KB;
+  }
+
+  return sector;
+}
+
+uint32_t get_addr_from_sector(uint8_t _sector)
+{
+  if (_sector >= SECTOR_NUM) {
+    return 0;
+  }
+
+  uint32_t addr = BL_FLASH_BEGIN;
+  uint8_t sector_cnt = 0;
+
+  while(_sector > sector_cnt) {
+    addr += (sector_cnt < 4) ? SECTOR_SIZE_16KB :
+              (sector_cnt == 4) ? SECTOR_SIZE_64KB :
+                                    SECTOR_SIZE_128KB;
+    sector_cnt++;
+  }
+
+  return addr;
 }
 
 
@@ -153,13 +176,13 @@ uint32_t get_sector_addr(uint8_t _sector)
 	4. Wait for the BSY bit to be cleared
  */
 
-BootloaderStatus_t erase_sector(uint8_t _sector)
+FlashControllerStatus_t erase_sector(uint8_t _sector)
 {
   if (_sector >= SECTOR_NUM) {
     return FLASH_SECTOR_OUT_OF_RANGE;
   }
 
-  if (busy_check() != OK) {
+  if (busy_check() != FLASH_CONTROLLER_OK) {
     return BUSY_CHECK_TIMEOUT;
   }
 
@@ -170,7 +193,7 @@ BootloaderStatus_t erase_sector(uint8_t _sector)
   FLASH->CR |=  (_sector << FLASH_CR_SNB_Pos);
   FLASH->CR |= FLASH_CR_STRT;
 
-  if (busy_check() != OK) {
+  if (busy_check() != FLASH_CONTROLLER_OK) {
     return BUSY_CHECK_TIMEOUT;
   }
 
@@ -201,9 +224,9 @@ BootloaderStatus_t erase_sector(uint8_t _sector)
 	performed first.
  */
 
-BootloaderStatus_t program_data(uint32_t _addr, uint8_t* _pdata, uint16_t _size)
+FlashControllerStatus_t program_data(uint32_t _addr, uint8_t* _pdata, uint16_t _size)
 {
-  if (busy_check() != OK) {
+  if (busy_check() != FLASH_CONTROLLER_OK) {
     return BUSY_CHECK_TIMEOUT;
   }
   clear_prog_errs();
@@ -213,9 +236,9 @@ BootloaderStatus_t program_data(uint32_t _addr, uint8_t* _pdata, uint16_t _size)
   int i;
 
   for (i=0; i<_size; i++) {
-    uint32_t offset = i*8;
+    uint32_t offset = i;
     *(__IO uint8_t*)(_addr + offset) = (uint8_t)_pdata[i];
-    if (busy_check() != OK) {
+    if (busy_check() != FLASH_CONTROLLER_OK) {
       return BUSY_CHECK_TIMEOUT;
     }
   }

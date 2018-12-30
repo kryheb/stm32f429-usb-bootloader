@@ -2,6 +2,7 @@
 #include "init.h"
 #include "bootloader.h"
 
+#include "led.h"
 
 int main(void)
 {

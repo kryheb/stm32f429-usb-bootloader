@@ -227,18 +227,19 @@ static int8_t CUSTOM_HID_DeInit_HS(void)
 static int8_t CUSTOM_HID_OutEvent_HS(uint8_t event_idx, uint8_t state)
 {
   /* USER CODE BEGIN 10 */
-  if (usbCommHandle.state == USB_STATE_READY
+  USBD_CUSTOM_HID_HandleTypeDef *hhid = (USBD_CUSTOM_HID_HandleTypeDef*)hUsbDeviceHS.pClassData;
+  if (hhid->Report_buf[0] == CUSTOM_HID_EPOUT_ADDR && usbCommHandle.state == USB_STATE_READY
       && !usbCommHandle.data_out_pending) {
 
     usbCommHandle.data_out_pending = true;
-    USBD_CUSTOM_HID_HandleTypeDef *hhid = (USBD_CUSTOM_HID_HandleTypeDef*)hUsbDeviceHS.pClassData;
 
     for (int i=0; i<CUSTOM_HID_EPOUT_SIZE; i++) {
       usbCommHandle.buffer[i] = hhid->Report_buf[i];
     }
+    data_received();
   }
 
-  data_received();
+
 
 	return (USBD_OK);
   /* USER CODE END 10 */
