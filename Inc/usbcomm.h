@@ -13,9 +13,11 @@
 
 #include "usb_device.h"
 #include <stdbool.h>
+#include "defs.h"
 
 #define HID_ADDR_INDEX  0
 #define COMMAND_INDEX   1
+#define DATA_OFFSET     2
 
 
 typedef enum {
@@ -54,9 +56,8 @@ typedef struct {
   bool data_in_pending;
 } USBCommHandle_t;
 
-extern USBCommHandle_t usbCommHandle;
-
-void initialize_usbcomm();
+USBCommHandle_t* create_usb_comm();
+OperationResult_t initialize_usbcomm(USBCommHandle_t* _usb_comm);
 void send_data();
 
 #endif /* USBCOMM_H_ */

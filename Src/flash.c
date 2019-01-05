@@ -260,7 +260,7 @@ FlashController_t* create_flash_controller()
     .app_section_address=BL_FLASH_BEGIN,
     .base_address=0,
     .state = FLASH_CONTROLLER_UNCONFIGURED };
-  memcpy(fc, &config, sizeof(FlashController_t));
+  memcpy(fc, (FlashController_t*)(&config), sizeof(FlashController_t));
   return fc;
 }
 

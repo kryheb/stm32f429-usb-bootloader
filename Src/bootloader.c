@@ -14,17 +14,33 @@
 
 #include "led.h"
 
+Bootloader_t* bootloader;
 
-void initialize(Bootloader_t* _bootloader)
+
+OperationResult_t initialize(Bootloader_t* _bootloader)
 {
   _bootloader->state = BOOTLOADER_STATE_INITIALIZATION;
-  initialize_usbcomm(_bootloader);
-  _bootloader->flashController = create_flash_controller();
-  _bootloader->state =
-      (_bootloader->usb->state != USB_STATE_READY) ?
-          BOOTLOADER_STATE_INITIALIZATION_FAILED : BOOTLOADER_STATE_INITIALIZED;
-  led_init();
-  _bootloader->state == BOOTLOADER_STATE_INITIALIZED ? led_green_on() : led_red_on();
+  USBCommHandle_t* usb = create_usb_comm();
+  if (!usb) {
+     _bootloader->state = BOOTLOADER_STATE_USB_INITIALIZATION_FAILED;
+     return FAILED;
+   }
+
+  OperationResult_t res = initialize_usbcomm(usb);
+  if (res != OK) {
+    _bootloader->state = BOOTLOADER_STATE_INITIALIZATION_FAILED;
+    return FAILED;
+  }
+  _bootloader->usb = usb;
+   FlashController_t* fc = create_flash_controller();
+  if (!fc) {
+    _bootloader->state = BOOTLOADER_STATE_INITIALIZATION_FAILED;
+    return FAILED;
+  }
+  _bootloader->flashController = fc;
+  bootloader = _bootloader;
+  _bootloader->state = BOOTLOADER_STATE_INITIALIZED;
+  return OK;
 }
 
 

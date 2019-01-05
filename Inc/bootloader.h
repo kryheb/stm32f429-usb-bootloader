@@ -20,6 +20,7 @@ typedef enum {
   BOOTLOADER_STATE_INITIALIZATION,
   BOOTLOADER_STATE_INITIALIZED,
   BOOTLOADER_STATE_INITIALIZATION_FAILED,
+  BOOTLOADER_STATE_USB_INITIALIZATION_FAILED,
   BOOTLOADER_STATE_ADDRESS_BASE_SET,
   BOOTLOADER_STATE_SET_ADDRESS_BASE_FAILED,
   BOOTLOADER_STATE_FLASH_INITIALIZATION,
@@ -40,7 +41,7 @@ typedef struct {
   FlashController_t*  flashController;
 } Bootloader_t;
 
-void initialize(Bootloader_t* _bootloader);
+OperationResult_t initialize(Bootloader_t* _bootloader);
 
 
 #endif /* BOOTLOADER_H_ */

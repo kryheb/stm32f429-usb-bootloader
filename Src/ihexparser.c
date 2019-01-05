@@ -35,7 +35,7 @@ static bool is_valid(const uint8_t* _raw_bytes, const size_t _size, const uint8_
  * 10         | 42FC          | 00            | 4FF090424FF090439B6943F400139361  | 4D
  */
 
-HexParserState_t parse_record(HexRec_t* _hex_rec, const uint8_t* _buffer, size_t _buff_len)
+HexParserState_t parse_record(HexRec_t* _hex_rec, uint8_t* _buffer, size_t _buff_len)
 {
   _hex_rec->size = _buffer[HP_SIZE_INDEX];
   if (_buff_len < (_hex_rec->size + HP_MIN_RECORD_SIZE)) {

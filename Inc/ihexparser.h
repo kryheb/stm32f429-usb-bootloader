@@ -55,6 +55,6 @@ typedef struct {
   uint8_t checksum;
 } HexRec_t;
 
-HexParserState_t parse_record(HexRec_t* _hex_rec, const uint8_t* _buffer, size_t _buff_len);
+HexParserState_t parse_record(HexRec_t* _hex_rec, uint8_t* _buffer, size_t _buff_len);
 
 #endif /* IHEXPARSER_H_ */
