@@ -13,6 +13,7 @@
 #include "defs.h"
 #include "usbcomm.h"
 #include "flash.h"
+#include "ihexparser.h"
 
 typedef enum {
   BOOTLOADER_STATE_IDLE,
@@ -34,16 +35,12 @@ typedef enum {
 
 
 typedef struct {
-  BootloaderState_t state;
-  USBCommHandle_t *usb;
-  // ihex parser
-  FlashController_t* flashController;
+  BootloaderState_t   state;
+  USBCommHandle_t*    usb;
+  FlashController_t*  flashController;
 } Bootloader_t;
 
 void initialize(Bootloader_t* _bootloader);
-void set_base_address(Bootloader_t* _bootloader, uint32_t _addr);
-void initialize_flash(Bootloader_t* _bootloader);
-void flash_data(Bootloader_t* _bootloader, uint32_t _addr, uint8_t* _datap, size_t _size);
 
 
 #endif /* BOOTLOADER_H_ */

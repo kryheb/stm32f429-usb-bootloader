@@ -120,31 +120,31 @@
 /** Usb custom HID report descriptor. */
 __ALIGN_BEGIN static uint8_t CUSTOM_HID_ReportDesc_HS[USBD_CUSTOM_HID_REPORT_DESC_SIZE] __ALIGN_END =
 {
-  /* USER CODE BEGIN 1 */
-		0x05, 0x01,                    // USAGE_PAGE (Generic Desktop)
-		0x09, 0x00,                    // USAGE (Undefined)
-		0xa1, 0x01,                    // COLLECTION (Application)
+    /* USER CODE BEGIN 1 */
+    0x05, 0x01,                    // USAGE_PAGE (Generic Desktop)
+    0x09, 0x00,                    // USAGE (Undefined)
+    0xa1, 0x01,                    // COLLECTION (Application)
 
-		0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
-		0x26, 0xff, 0x00,              //   LOGICAL_MAXIMUM (255)
+    0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
+    0x26, 0xff, 0x00,              //   LOGICAL_MAXIMUM (255)
 
-		// IN report
+    // IN report
 
-		0x85, 0x01,                    //   REPORT_ID (1)
-		0x75, 0x08,                    //   REPORT_SIZE (8)
-		0x95, 0x01,                    //   REPORT_COUNT (this is the byte length)
-		0x09, 0x00,                    //   USAGE (Undefined)
-		0x81, 0x82,                    //   INPUT (Data,Var,Abs,Vol)
+    0x85, 0x01,                    //   REPORT_ID (1)
+    0x75, 0x08,                    //   REPORT_SIZE (8)
+    0x95, 0x01,                    //   REPORT_COUNT (this is the byte length)
+    0x09, 0x00,                    //   USAGE (Undefined)
+    0x81, 0x82,                    //   INPUT (Data,Var,Abs,Vol)
 
-		// OUT report
+    // OUT report
 
-		0x85, 0x02,                    //   REPORT_ID (2)
-		0x75, 0x08,                    //   REPORT_SIZE (8)
-		0x95, 0x40,                    //   REPORT_COUNT (this is the byte length)
-		0x09, 0x00,                    //   USAGE (Undefined)
-		0x91, 0x82,                    //   OUTPUT (Data,Var,Abs,Vol)
-  /* USER CODE END 1 */
-   0xC0    /*     END_COLLECTION             */
+    0x85, 0x02,                    //   REPORT_ID (2)
+    0x75, 0x08,                    //   REPORT_SIZE (8)
+    0x95, 0x40,                    //   REPORT_COUNT (this is the byte length)
+    0x09, 0x00,                    //   USAGE (Undefined)
+    0x91, 0x82,                    //   OUTPUT (Data,Var,Abs,Vol)
+    /* USER CODE END 1 */
+    0xC0    /*     END_COLLECTION             */
 };
 /* USER CODE BEGIN PRIVATE_VARIABLES */
 
@@ -189,6 +189,13 @@ USBD_CUSTOM_HID_ItfTypeDef USBD_CustomHID_fops_HS =
   CUSTOM_HID_OutEvent_HS
 };
 
+
+void register_out_data_handler(int8_t (*_out_data_handler)(uint8_t, uint8_t ))
+{
+  USBD_CustomHID_fops_HS.OutEvent = _out_data_handler;
+}
+
+
 /** @defgroup USBD_CUSTOM_HID_Private_Functions USBD_CUSTOM_HID_Private_Functions
   * @brief Private functions.
   * @{
@@ -227,21 +234,7 @@ static int8_t CUSTOM_HID_DeInit_HS(void)
 static int8_t CUSTOM_HID_OutEvent_HS(uint8_t event_idx, uint8_t state)
 {
   /* USER CODE BEGIN 10 */
-  USBD_CUSTOM_HID_HandleTypeDef *hhid = (USBD_CUSTOM_HID_HandleTypeDef*)hUsbDeviceHS.pClassData;
-  if (hhid->Report_buf[0] == CUSTOM_HID_EPOUT_ADDR && usbCommHandle.state == USB_STATE_READY
-      && !usbCommHandle.data_out_pending) {
-
-    usbCommHandle.data_out_pending = true;
-
-    for (int i=0; i<CUSTOM_HID_EPOUT_SIZE; i++) {
-      usbCommHandle.buffer[i] = hhid->Report_buf[i];
-    }
-    data_received();
-  }
-
-
-
-	return (USBD_OK);
+  	return (USBD_OK);
   /* USER CODE END 10 */
 }
 

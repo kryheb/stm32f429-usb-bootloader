@@ -57,7 +57,6 @@ typedef struct {
 extern USBCommHandle_t usbCommHandle;
 
 void initialize_usbcomm();
-void data_received();
-void send_data(USBCommHandle_t* _usbCommHandle);
+void send_data();
 
 #endif /* USBCOMM_H_ */

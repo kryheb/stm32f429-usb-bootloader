@@ -30,7 +30,12 @@ typedef enum {
   HEX_PARSER_INVALID_LEN,
   HEX_PARSER_INVALID_CHECKSUM,
   HEX_PARSER_PARSING_ERROR
-} HexParserStatus_t;
+} HexParserState_t;
+
+
+typedef struct {
+  HexParserState_t state;
+} HexParserHandle_t;
 
 
 typedef enum {
@@ -50,6 +55,6 @@ typedef struct {
   uint8_t checksum;
 } HexRec_t;
 
-HexParserStatus_t parse_record(HexRec_t* _hex_rec, const uint8_t* _buffer, size_t _buff_len);
+HexParserState_t parse_record(HexRec_t* _hex_rec, const uint8_t* _buffer, size_t _buff_len);
 
 #endif /* IHEXPARSER_H_ */

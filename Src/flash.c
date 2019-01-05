@@ -9,20 +9,24 @@
 
 #include "flash.h"
 #include "timeout.h"
+#include <memory.h>
+#include <stdlib.h>
+
+
 
 /*
     1. Write KEY1 = 0x45670123 in the Flash key register (FLASH_KEYR)
     2. Write KEY2 = 0xCDEF89AB in the FLASH_KEYR register.
  */
 
-void unlock_flash()
+static void unlock_flash()
 {
   FLASH->KEYR = 0x45670123;
   FLASH->KEYR = 0xCDEF89AB;
 }
 
 
-static FlashControllerStatus_t busy_check()
+static FlashState_t busy_check()
 {
   set_timeout(10);
   while(1)
@@ -36,7 +40,7 @@ static FlashControllerStatus_t busy_check()
 }
 
 
-void clear_prog_errs()
+static void clear_prog_errs()
 {
   FLASH->SR |=
       FLASH_SR_PGSERR  |
@@ -95,7 +99,7 @@ void clear_prog_errs()
 
 
 
-static FlashControllerStatus_t get_flash_error()
+static FlashState_t get_flash_error()
 {
   if (FLASH->SR & FLASH_SR_PGSERR_Msk) {
     return FLASH_PROG_SEQ_ERROR;
@@ -124,7 +128,7 @@ static FlashControllerStatus_t get_flash_error()
 	 Sector 11 | 0x080E 0000 - 0x080F FFFF | 128 Kbytes
  */
 
-uint8_t get_sector_from_addr(uint32_t _addr)
+static uint8_t get_sector_from_addr(uint32_t _addr)
 {
   if ((_addr < BL_FLASH_BEGIN) || (_addr > BL_FLASH_END)){
     return 0xFF;
@@ -176,7 +180,7 @@ uint32_t get_addr_from_sector(uint8_t _sector)
 	4. Wait for the BSY bit to be cleared
  */
 
-FlashControllerStatus_t erase_sector(uint8_t _sector)
+static FlashState_t erase_sector(uint8_t _sector)
 {
   if (_sector >= SECTOR_NUM) {
     return FLASH_SECTOR_OUT_OF_RANGE;
@@ -224,7 +228,7 @@ FlashControllerStatus_t erase_sector(uint8_t _sector)
 	performed first.
  */
 
-FlashControllerStatus_t program_data(uint32_t _addr, uint8_t* _pdata, uint16_t _size)
+FlashState_t program_data(uint32_t _addr, uint8_t* _pdata, size_t _size)
 {
   if (busy_check() != FLASH_CONTROLLER_OK) {
     return BUSY_CHECK_TIMEOUT;
@@ -245,4 +249,54 @@ FlashControllerStatus_t program_data(uint32_t _addr, uint8_t* _pdata, uint16_t _
 
   FLASH->CR &= ~(FLASH_CR_PG);
   return get_flash_error();
+}
+
+
+FlashController_t* create_flash_controller()
+{
+  FlashController_t* fc = malloc(sizeof(FlashController_t));
+  if (!fc) return NULL;
+  FlashController_t config = (FlashController_t){
+    .app_section_address=BL_FLASH_BEGIN,
+    .base_address=0,
+    .state = FLASH_CONTROLLER_UNCONFIGURED };
+  memcpy(fc, &config, sizeof(FlashController_t));
+  return fc;
+}
+
+
+OperationResult_t initialize_flash(FlashController_t* _flash_controller)
+{
+  clear_prog_errs();
+  unlock_flash();
+  uint32_t sector = get_sector_from_addr(_flash_controller->base_address);
+  if (sector >= SECTOR_NUM) {
+    _flash_controller->state = FLASH_CONTROLLER_INVALID_SECTOR;
+    return FAILED;
+  }
+  FlashState_t fc_status = erase_sector(sector);
+  _flash_controller->state = fc_status;
+  return (fc_status != FLASH_CONTROLLER_OK) ? FAILED : OK;
+}
+
+
+OperationResult_t set_base_address(FlashController_t* _flash_controller, uint32_t _addr)
+{
+  if (_addr >= _flash_controller->app_section_address) {
+    // FIXME: temp addr offset
+    _flash_controller->base_address = 0x800C000;
+    _flash_controller->state = FLASH_CONTROLLER_INVALID_BASE_ADDRESS;
+    return OK;
+  }
+  return FAILED;
+}
+
+
+OperationResult_t flash_data(FlashController_t* _flash_controller, uint32_t _addr_offset, uint8_t* _datap, size_t _size)
+{
+  _flash_controller->state = FLASH_CONTROLLER_BUSY;
+  uint32_t addr = _flash_controller->base_address + _addr_offset;
+  FlashState_t st = program_data(addr, _datap, _size);
+  _flash_controller->state = st;
+  return (st != FLASH_CONTROLLER_OK) ? FAILED : OK;
 }

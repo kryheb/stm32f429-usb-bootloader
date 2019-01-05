@@ -118,6 +118,7 @@
 
 /** CUSTOMHID Interface callback. */
 extern USBD_CUSTOM_HID_ItfTypeDef USBD_CustomHID_fops_HS;
+void register_out_data_handler(int8_t (*_out_data_handler)(uint8_t, uint8_t ));
 
 /* USER CODE BEGIN EXPORTED_VARIABLES */
 

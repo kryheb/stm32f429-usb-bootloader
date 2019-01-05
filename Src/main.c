@@ -14,7 +14,7 @@ int main(void)
   while (1)
   {
     if (bootloader.usb->data_in_pending) {
-      send_data(bootloader.usb);
+      send_data();
     }
   }
 

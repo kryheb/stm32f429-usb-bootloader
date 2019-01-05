@@ -12,6 +12,7 @@
 
 #include "stm32f429xx.h"
 #include "defs.h"
+#include <stddef.h>
 
 #define BL_FLASH_BEGIN         0x08000000
 #define BL_FLASH_END           0x080FFFFF
@@ -23,6 +24,10 @@
 
 typedef enum {
   FLASH_CONTROLLER_OK,
+  FLASH_CONTROLLER_BUSY,
+  FLASH_CONTROLLER_UNCONFIGURED,
+  FLASH_CONTROLLER_INVALID_BASE_ADDRESS,
+  FLASH_CONTROLLER_INVALID_SECTOR,
   FLASH_SECTOR_OUT_OF_RANGE,
   FLASH_PROG_SEQ_ERROR,
   FLASH_PROG_PARALLELISM_ERROR,
@@ -30,19 +35,19 @@ typedef enum {
   FLASH_WRITE_PROTECTION_ERROR,
   FLASH_PROG_ERROR,
   BUSY_CHECK_TIMEOUT
-} FlashControllerStatus_t;
+} FlashState_t;
 
 typedef struct {
-  const uint32_t app_section_address;
+  uint32_t app_section_address;
   uint32_t base_address;
+  FlashState_t state;
 } FlashController_t;
 
-void clear_prog_errs();
-void unlock_flash();
-uint8_t get_sector_from_addr(uint32_t _addr);
-uint32_t get_addr_from_sector(uint8_t _sector);
-FlashControllerStatus_t erase_sector(uint8_t _sector);
-FlashControllerStatus_t program_data(uint32_t _addr, uint8_t* _pdata, uint16_t _size);
+FlashController_t* create_flash_controller();
+OperationResult_t initialize_flash(FlashController_t* _flash_controller);
+OperationResult_t set_base_address(FlashController_t* _flash_controller, uint32_t _addr);
+OperationResult_t flash_data(FlashController_t* _flash_controller, uint32_t _addr_offset, uint8_t* _datap, size_t _size);
+
 
 
 #endif /* FLASH_H_ */
