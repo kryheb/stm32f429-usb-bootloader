@@ -267,9 +267,10 @@ FlashController_t* create_flash_controller()
 
 OperationResult_t initialize_flash(FlashController_t* _flash_controller)
 {
+  _flash_controller->application_address = 0x800C000; /*FIXME*/
   clear_prog_errs();
   unlock_flash();
-  uint32_t sector = get_sector_from_addr(_flash_controller->base_address);
+  uint32_t sector = get_sector_from_addr(_flash_controller->application_address);
   if (sector >= SECTOR_NUM) {
     _flash_controller->state = FLASH_CONTROLLER_INVALID_SECTOR;
     return FAILED;
@@ -283,11 +284,22 @@ OperationResult_t initialize_flash(FlashController_t* _flash_controller)
 OperationResult_t set_base_address(FlashController_t* _flash_controller, uint32_t _addr)
 {
   if (_addr >= _flash_controller->app_section_address) {
-    // FIXME: temp addr offset
-    _flash_controller->base_address = 0x800C000;
+    _flash_controller->base_address = _addr;
     _flash_controller->state = FLASH_CONTROLLER_INVALID_BASE_ADDRESS;
     return OK;
   }
+  return FAILED;
+}
+
+
+OperationResult_t set_application_address(FlashController_t* _flash_controller, uint32_t _addr)
+{
+  uint32_t app_addr= *(__IO uint32_t*) (_flash_controller->application_address + RESET_VECTOR_OFFSET);
+  if (app_addr == _addr) {
+    _flash_controller->application_start_address = _addr;
+    return OK;
+  }
+
   return FAILED;
 }
 

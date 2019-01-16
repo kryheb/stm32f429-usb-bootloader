@@ -22,6 +22,9 @@
 #define SECTOR_SIZE_64KB    0x10000
 #define SECTOR_SIZE_128KB   0x20000
 
+#define RESET_VECTOR_OFFSET 4
+
+
 typedef enum {
   FLASH_CONTROLLER_OK,
   FLASH_CONTROLLER_BUSY,
@@ -40,12 +43,16 @@ typedef enum {
 typedef struct {
   uint32_t app_section_address;
   uint32_t base_address;
+  uint32_t application_address;
+  uint32_t application_start_address;
   FlashState_t state;
 } FlashController_t;
+
 
 FlashController_t* create_flash_controller();
 OperationResult_t initialize_flash(FlashController_t* _flash_controller);
 OperationResult_t set_base_address(FlashController_t* _flash_controller, uint32_t _addr);
+OperationResult_t set_application_address(FlashController_t* _flash_controller, uint32_t _addr);
 OperationResult_t flash_data(FlashController_t* _flash_controller, uint32_t _addr_offset, uint8_t* _datap, size_t _size);
 
 

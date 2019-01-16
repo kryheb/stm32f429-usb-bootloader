@@ -17,7 +17,7 @@ static bool is_valid(const uint8_t* _raw_bytes, const size_t _size, const uint8_
   int i;
   uint8_t sum = 0;
 
-  for (i=0; i<(_size-1); i++) {
+  for (i=0; i<(_size); i++) {
     sum += _raw_bytes[i];
   }
 
@@ -47,6 +47,7 @@ HexParserState_t parse_record(HexRec_t* _hex_rec, uint8_t* _buffer, size_t _buff
 
   if (!is_valid(_buffer, checksum_index, _hex_rec->checksum)) {
     return HEX_PARSER_INVALID_CHECKSUM;
+
   }
 
   _hex_rec->addr = (_buffer[HP_ADDR_INDEX_MSB] << 8) | _buffer[HP_ADDR_INDEX_LSB];

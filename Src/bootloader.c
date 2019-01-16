@@ -44,7 +44,11 @@ OperationResult_t initialize(Bootloader_t* _bootloader)
 }
 
 
-
-
-
-
+void launch_application(Bootloader_t* _bootloader)
+{
+  Application_t application = (Application_t)_bootloader->flashController->application_start_address;
+  uint32_t appStack = (uint32_t) *((__IO uint32_t*) _bootloader->flashController->application_address);
+  SCB->VTOR = _bootloader->flashController->application_address;
+  __set_MSP(appStack);
+  application();
+}

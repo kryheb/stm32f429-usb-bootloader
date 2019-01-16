@@ -69,9 +69,13 @@ static void data_received(USBOutputCommand_t _out_command, uint8_t* _data)
       HexRec_t hex_record;
       if (parse_record(&hex_record, _data, CUSTOM_HID_EPOUT_SIZE) != HEX_PARSER_OK) {
         bootloader->state = BOOTLOADER_STATE_FLASHING_FAILED;
+        prepare_resonse(INPUT_COMMAND_FLASHING_NOK);
+        return;
       }
       if (hex_record.rtype != RTYPE_DATA) {
         bootloader->state = BOOTLOADER_STATE_FLASHING_FAILED;
+        prepare_resonse(INPUT_COMMAND_FLASHING_NOK);
+        return;
       }
       OperationResult_t res = flash_data(bootloader->flashController,
                                           hex_record.addr, hex_record.data, hex_record.size);
@@ -80,9 +84,28 @@ static void data_received(USBOutputCommand_t _out_command, uint8_t* _data)
       prepare_resonse(rsp);
     }
     break;
-
+    case OUTPUT_COMMAND_SET_START_ADDRESS: {
+      HexRec_t hex_record;
+      if (parse_record(&hex_record, _data, CUSTOM_HID_EPOUT_SIZE) != HEX_PARSER_OK) {
+        bootloader->state = BOOTLOADER_STATE_SET_APPLICATION_ADDRESS_FAILED;
+      }
+      if (hex_record.rtype != RTYPE_START_LINEAR_ADDR) {
+        bootloader->state = BOOTLOADER_STATE_SET_APPLICATION_ADDRESS_FAILED;
+      }
+      uint32_t addr = (hex_record.data[0] << 24) | (hex_record.data[1] << 16)
+                        | (hex_record.data[2] << 8) | (hex_record.data[3]);
+      OperationResult_t res = set_application_address(bootloader->flashController, addr);
+      USBInputCommand_t rsp = (res != OK) ?
+            INPUT_COMMAND_SET_START_ADDRESS_NOK : INPUT_COMMAND_SET_START_ADDRESS_OK;
+      prepare_resonse(rsp);
+    }
+    break;
+    case OUTPUT_COMMAND_LAUNCH_APPLICATION: {
+      launch_application(bootloader);
+    }
+    break;
     default:
-      // TODO
+      prepare_resonse(INPUT_COMMAND_UNKNOWN_COMMAND);
       break;
 
   }
@@ -95,8 +118,9 @@ static int8_t out_data_handler(uint8_t _ep_addr, uint8_t _cmd)
 {
   USBD_CUSTOM_HID_HandleTypeDef *hhid =
       (USBD_CUSTOM_HID_HandleTypeDef*)bootloader->usb->usb_device_handle->pClassData;
-  if (_ep_addr == CUSTOM_HID_EPOUT_ADDR && bootloader->usb->state == USB_STATE_READY
-      && !bootloader->usb->data_out_pending) {
+  if (_ep_addr == CUSTOM_HID_EPOUT_ADDR
+        && bootloader->usb->state == USB_STATE_READY
+          && !bootloader->usb->data_out_pending) {
 
     bootloader->usb->data_out_pending = true;
 
